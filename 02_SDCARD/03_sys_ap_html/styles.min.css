@@ -1,1 +1,63 @@
-/* .ImgSysTainer,.sysFelx{display:flex}.sysInputFile{opacity:0;pointer-events:none;position:absolute}.selected{background-color:#87cefa;color:red} */
+.ImgSysTainer,
+.sysFelx {
+    display: flex;
+}
+
+.sysInputFile {
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+.selected {
+    background-color: #87cefa;
+    color: red;
+}
+
+#Image_Wrapper {
+    user-select: none;
+}
+
+#Crop_Box {
+    position: absolute;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    cursor: move;
+    display: none;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+/* Resize Handles */
+.crop-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    border: 1px solid #333;
+    z-index: 11;
+}
+
+.handle-nw {
+    top: -5px;
+    left: -5px;
+    cursor: nw-resize;
+}
+
+.handle-ne {
+    top: -5px;
+    right: -5px;
+    cursor: ne-resize;
+}
+
+.handle-sw {
+    bottom: -5px;
+    left: -5px;
+    cursor: sw-resize;
+}
+
+.handle-se {
+    bottom: -5px;
+    right: -5px;
+    cursor: se-resize;
+}

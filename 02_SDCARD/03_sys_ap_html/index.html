@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html data-bs-theme="light" lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
@@ -7,66 +8,110 @@
     <link rel="stylesheet" href="bootstrap.min.css">
     <link rel="stylesheet" href="styles.min.css">
 </head>
+
 <body>
     <div class="vw-100 vh-100 p-5 bg-body-secondary d-flex flex-column">
-        <h1 class="text-center fw-bold mb-4">ESP32-S3-PhotoPainter Operating interface</h1>
-        <div class="d-flex justify-content-between gap-5 w-100 mx-auto">
-            <div class="d-flex gap-2 align-items-center">
-                <button class="btn btn-success" id="Input_Button" type="button">
-                    Input
-                </button>
-                <button class="btn btn-success" id="Rotate_Button" type="button">
-                    Rotate:
-                </button>
-            </div>
-            <div class="d-flex gap-2 align-items-center">
-                <div class="d-flex align-items-center gap-2 ms-5">
+        <div class="mb-4">
+            <h1 class="text-center fw-bold mb-4">ESP32-S3-PhotoPainter Operating interface</h1>
+            <div class="d-flex align-items-center gap-4">
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     <span>NetworkMode:</span>
                     <div class="btn-group">
-                        <a data-mode="AP" class="btn btn-outline-success active">AP</a>
-                        <a data-mode="STA" class="btn btn-outline-success">STA</a>
+                        <a data-mode="AP" class="btn btn-outline-success active" style="width: 60px;">AP</a>
+                        <a data-mode="STA" class="btn btn-outline-success" style="width: 60px;">STA</a>
                     </div>
                 </div>
-                <button class="btn btn-success" id="Send_Button" type="button" style="min-width: 200px;">
-                    Send
-                </button>
+                <div id="tips" class="text-secondary small border-start ps-3">
+                    <div id="tips-AP" class="text-start">
+                        The settings will take effect after a restart. For AP mode, connect to SSID: esp_network
+                        (pass: 1234567890), then visit: http://192.168.4.1/index.html
+                    </div>
+                    <div id="tips-STA" class="text-start d-none">
+                        The settings will take effect after a restart. For STA mode, configure via Mode 3,
+                        then visit: http://esp32-s3-photopainter.local/index.html
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="tips" class="mt-2">
-            <div id="tips-AP" class="text-end">
-                The settings will take effect after a restart. For AP mode, first connect to the SSID: esp_network (password: 1234567890), then access the address: http://192.168.4.1/index.html
-            </div>
-            <div id="tips-STA" class="text-end d-none">
-                The settings will take effect after a restart. For STA mode, first configure the network using Mode 3, then access the address: http://esp32-s3-photopainter.local/index.html
-            </div>
-        </div>
+
         <div class="d-flex m-auto gap-5 h-75 w-100">
-            <div class="flex-fill bg-white border border-success w-50 rounded-2 d-flex flex-column align-items-center">
+            <!-- Left Column: Original Image -->
+            <div
+                class="flex-fill bg-white border border-success w-50 rounded-2 d-flex flex-column align-items-center p-3">
+                <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                    <div class="fs-4 fw-bold">Original Image</div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-end">
+                        <button class="btn btn-success btn-sm" id="Input_Button" type="button">📥 Input</button>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" style="width: 30px;" id="Src_Rotate_L"
+                                type="button" title="Rotate Left">↺</button>
+                            <button class="btn btn-outline-secondary" style="width: 30px;" id="Src_Rotate_R"
+                                type="button" title="Rotate Right">↻</button>
+                            <button class="btn btn-outline-secondary" style="width: 30px;" id="Src_Mirror" type="button"
+                                title="Mirror Horizontally">↔</button>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary w-50" id="Zoom_Out" type="button"
+                                title="Zoom Out">-</button>
+                            <button class="btn btn-outline-secondary w-50" id="Zoom_In" type="button"
+                                title="Zoom In">+</button>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                data-bs-toggle="dropdown" aria-expanded="false" id="Ratio_Dropdown">
+                                Ratio: 5:3
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" data-ratio="1.666666">5:3</a></li>
+                                <li><a class="dropdown-item" href="#" data-ratio="0.6">3:5</a></li>
+                                <li><a class="dropdown-item" href="#" data-ratio="1">1:1</a></li>
+                                <li><a class="dropdown-item" href="#" data-ratio="free">Free</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
                 <input type="file" class="sysInputFile d-none" id="File_Input">
-                <div class="fs-3 my-3">Original image</div>
-                <img src="placeholder.svg" class="m-auto" id="Image_Input" alt="Original_image" style="max-height: 80%; max-width: 80%;">
+                <div id="Image_Wrapper"
+                    style="position: relative; width: 100%; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; overflow: hidden;">
+                    <!-- Replaced img with canvas for better performance -->
+                    <img id="Image_Placeholder" src="placeholder.svg" alt="Placeholder"
+                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <canvas id="Image_Input_Canvas" style="display: none;"></canvas>
+                    <div id="Crop_Box" class="crop-box" style="display: none; position: absolute;">
+                        <div class="crop-grid"></div>
+                    </div>
+                </div>
             </div>
-            <div class="flex-fill bg-white border border-success w-50 rounded-2 d-flex flex-column align-items-center">
-                <div class="fs-3 my-3">Processed image</div>
-                <img src="placeholder.svg" class="m-auto" id="Image_Processed" alt="Processed_image" style="max-height: 80%; max-width: 80%;">
+
+            <!-- Right Column: Processed Image -->
+            <div
+                class="flex-fill bg-white border border-success w-50 rounded-2 d-flex flex-column align-items-center p-3">
+                <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                    <div class="fs-4 fw-bold">Processed Image</div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <!-- Background Color Controls -->
+                        <div class="input-group input-group-sm" style="width: auto;">
+                            <button class="btn btn-outline-secondary" type="button" id="Btn_Bg_Black"
+                                style="background-color: black; color: white; width: 30px;">B</button>
+                            <button class="btn btn-outline-secondary" type="button" id="Btn_Bg_White"
+                                style="background-color: white; color: black; width: 30px;">W</button>
+                            <input type="text" class="form-control border-secondary" id="Bg_Color_Text" value="#FFFFFF"
+                                style="width: 80px; text-transform: uppercase;" placeholder="#FFFFFF">
+                        </div>
+                        <button class="btn btn-success btn-sm" id="Send_Button" type="button">🚀 Send</button>
+                    </div>
+                </div>
+                <div
+                    style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                    <img src="placeholder.svg" id="Image_Processed" alt="Processed_image"
+                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
             </div>
         </div>
     </div>
+
     <script src="bootstrap.min.js"></script>
     <script src="script.min.js"></script>
 </body>
+
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
