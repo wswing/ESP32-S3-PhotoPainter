@@ -10,25 +10,39 @@
 </head>
 
 <body>
-    <div class="vw-100 vh-100 p-5 bg-body-secondary d-flex flex-column">
+    <div class="vw-100 vh-100 p-3 p-md-5 bg-body-secondary d-flex flex-column overflow-auto">
         <div class="mb-4">
             <h1 class="text-center fw-bold mb-4">ESP32-S3-PhotoPainter Operating interface</h1>
-            <div class="d-flex align-items-center gap-4">
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                    <span>NetworkMode:</span>
-                    <div class="btn-group">
-                        <a data-mode="AP" class="btn btn-outline-success active" style="width: 60px;">AP</a>
-                        <a data-mode="STA" class="btn btn-outline-success" style="width: 60px;">STA</a>
-                    </div>
+            <div class="d-flex align-items-center justify-content-between">
+                <!-- Group 1: High-Frequency Action (Left) -->
+                <div class="d-flex align-items-center flex-shrink-0">
+                    <button class="btn btn-success px-5 fw-bold shadow-sm" id="Input_Button" type="button">🖼️ Open
+                        Image</button>
                 </div>
-                <div id="tips" class="text-secondary small border-start ps-3">
-                    <div id="tips-AP" class="text-start">
-                        The settings will take effect after a restart. For AP mode, connect to SSID: esp_network
-                        (pass: 1234567890), then visit: http://192.168.4.1/index.html
+
+                <!-- Group 2: Low-Frequency Settings (Right) -->
+                <div class="d-flex align-items-center ms-auto">
+                    <!-- Connection Tips (Shifted left of Network, smaller font) -->
+                    <div id="tips" class="text-secondary pe-3 me-3 border-end"
+                        style="min-width: 500px; font-size: 0.72rem; line-height: 1.3;">
+                        <div id="tips-AP" class="text-end">
+                            The settings will take effect after a restart. For AP mode, connect to SSID:
+                            <b>esp_network</b><br>
+                            (pass: 1234567890), then visit: http://192.168.4.1/index.html
+                        </div>
+                        <div id="tips-STA" class="text-end d-none">
+                            The settings will take effect after a restart. For STA mode, configure via Mode 3,<br>
+                            then visit: http://esp32-s3-photopainter.local/index.html
+                        </div>
                     </div>
-                    <div id="tips-STA" class="text-start d-none">
-                        The settings will take effect after a restart. For STA mode, configure via Mode 3,
-                        then visit: http://esp32-s3-photopainter.local/index.html
+
+                    <!-- Network Mode (Absolute Far Right) -->
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span>NetworkMode:</span>
+                        <div class="btn-group">
+                            <a data-mode="AP" class="btn btn-outline-success active" style="width: 60px;">AP</a>
+                            <a data-mode="STA" class="btn btn-outline-success" style="width: 60px;">STA</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -41,7 +55,6 @@
                 <div class="d-flex justify-content-between align-items-center w-100 mb-2">
                     <div class="fs-4 fw-bold">Original Image</div>
                     <div class="d-flex flex-wrap gap-2 align-items-center justify-content-end">
-                        <button class="btn btn-success btn-sm" id="Input_Button" type="button">📥 Input</button>
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-secondary" style="width: 30px;" id="Src_Rotate_L"
                                 type="button" title="Rotate Left">↺</button>
@@ -76,7 +89,8 @@
                     <!-- Replaced img with canvas for better performance -->
                     <img id="Image_Placeholder" src="placeholder.svg" alt="Placeholder"
                         style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                    <canvas id="Image_Input_Canvas" style="display: none;"></canvas>
+                    <canvas id="Image_Input_Canvas"
+                        style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
                     <div id="Crop_Box" class="crop-box" style="display: none; position: absolute;">
                         <div class="crop-grid"></div>
                     </div>
@@ -98,19 +112,107 @@
                             <input type="text" class="form-control border-secondary" id="Bg_Color_Text" value="#FFFFFF"
                                 style="width: 80px; text-transform: uppercase;" placeholder="#FFFFFF">
                         </div>
-                        <button class="btn btn-success btn-sm" id="Send_Button" type="button">🚀 Send</button>
+                        <button class="btn btn-outline-secondary btn-sm me-2" id="Orientation_Toggle" type="button"
+                            title="Switch Screen Orientation">
+                            <span id="Orientation_Text" class="d-none d-sm-inline">Landscape</span>
+                        </button>
+                        <button class="btn btn-success" id="Send_Button" type="button">🚀 Send</button>
                     </div>
                 </div>
+
                 <div
-                    style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                    style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 0.5rem; overflow: hidden;">
                     <img src="placeholder.svg" id="Image_Processed" alt="Processed_image"
                         style="max-width: 100%; max-height: 100%; object-fit: contain;">
+
+                    <!-- E-Ink Simulation Masks -->
+                    <div id="Ink_Simulation_Tint" class="paper-tint active"></div>
+                    <div id="Ink_Simulation_Mask" class="ink-mask active"></div>
+
+                    <!-- Settings Trigger (SVG Gear) - Always visible now -->
+                    <div id="E6_Settings_Trigger"
+                        class="position-absolute top-0 end-0 m-2 settings-trigger border shadow-sm">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </div>
+
+                    <!-- E6 Mode Settings (Auto-hide Overlay) -->
+                    <div id="E6_Settings_Panel"
+                        class="position-absolute top-0 end-0 m-1 p-2 border rounded shadow settings-overlay"
+                        style="width: 260px; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1000; font-size: 0.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="fw-bold text-primary"><i class="bi bi-sliders"></i> Settings</div>
+                            <div class="btn-group btn-group-xs" id="Preset_Group">
+                                <button class="btn btn-outline-primary btn-xs p-1" data-preset="natural"
+                                    style="font-size: 0.7rem;">Nat</button>
+                                <button class="btn btn-outline-primary btn-xs p-1" data-preset="portrait"
+                                    style="font-size: 0.7rem;">Por</button>
+                                <button class="btn btn-outline-primary btn-xs p-1" data-preset="landscape"
+                                    style="font-size: 0.7rem;">Lan</button>
+                                <button class="btn btn-outline-primary btn-xs p-1" data-preset="art"
+                                    style="font-size: 0.7rem;">Art</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between mb-0"><span>Gamma</span><span id="Val_Gamma"
+                                        class="fw-bold">1.1</span></div>
+                                <input type="range" class="form-range form-range-sm" id="Slider_Gamma" min="0.5"
+                                    max="2.0" step="0.1" value="1.1">
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between mb-0"><span>Contrast</span><span
+                                        id="Val_Contrast" class="fw-bold">0.4</span></div>
+                                <input type="range" class="form-range form-range-sm" id="Slider_Contrast" min="0"
+                                    max="1.0" step="0.1" value="0.4">
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between mb-0"><span>Sat</span><span
+                                        id="Val_Saturation" class="fw-bold">1.2</span></div>
+                                <input type="range" class="form-range form-range-sm" id="Slider_Saturation" min="1.0"
+                                    max="2.0" step="0.1" value="1.2">
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between mb-0"><span>Dither</span><span
+                                        id="Val_Dither" class="fw-bold">0.7</span></div>
+                                <input type="range" class="form-range form-range-sm" id="Slider_Dither" min="0"
+                                    max="1.0" step="0.05" value="0.7">
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex justify-content-between mb-0"><span>Thr</span><span
+                                        id="Val_Threshold" class="fw-bold">10</span></div>
+                                <input type="range" class="form-range form-range-sm" id="Slider_Threshold" min="0"
+                                    max="50" step="1" value="10">
+                            </div>
+                            <div class="col-12 border-top pt-2 mt-2">
+                                <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center mb-1"
+                                    title="Visual E-Ink texture simulation">
+                                    <label class="form-check-label fw-bold text-secondary" for="Ink_Sim_Toggle">E-Ink
+                                        Simulation</label>
+                                    <input class="form-check-input ms-0" type="checkbox" id="Ink_Sim_Toggle" checked>
+                                </div>
+                                <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center"
+                                    title="Advanced Optimization Algorithm">
+                                    <label class="form-check-label fw-bold text-secondary" for="Algo_Toggle">E6
+                                        Optimization</label>
+                                    <input class="form-check-input ms-0" type="checkbox" id="Algo_Toggle" checked>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="bootstrap.min.js"></script>
+    <script src="heic2any.min.js"></script>
     <script src="script.min.js"></script>
 </body>
 
