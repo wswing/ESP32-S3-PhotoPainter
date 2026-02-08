@@ -127,6 +127,18 @@ esp_err_t static_resource_unified_handler(httpd_req_t *req) {
                 break;
             }
         }
+    } else if(strstr(uri,"heic2any.min.js")) { // /heic2any.min.js
+        resp_str      = (char *) heap_caps_malloc(SEND_LEN_MAX + 1, MALLOC_CAP_SPIRAM);
+        httpd_resp_set_type(req, "text/javascript");
+        while(1) {
+            str_len = SDPort_->SDPort_ReadOffset("/sdcard/03_sys_ap_html/heic2any.min.js",resp_str,SEND_LEN_MAX,str_respLen);
+            if (str_len) {
+                httpd_resp_send_chunk(req, resp_str, str_len); 
+                str_respLen += str_len;
+            } else {
+                break;
+            }
+        }
     } else if(strstr(uri,"script.min.js")) { // /script.min.js
         resp_str      = (char *) heap_caps_malloc(SEND_LEN_MAX + 1, MALLOC_CAP_SPIRAM);
         httpd_resp_set_type(req, "text/javascript");
